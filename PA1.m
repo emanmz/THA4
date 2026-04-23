@@ -30,7 +30,7 @@ q(1:7) = [0; -pi/4; 0; -3*pi/4; 0; pi/2; pi/4];
 
 %% Goal & Tool Geometry
 pGoal = [0.10; 0.10; 0.40];
-dMax  = 0.003;
+dMax  = 0.003; % here is the 3 mm circle 
 % tip is at the end of the 100mm cylinder
 toolTipOffset = [0; 0; toolL];
 
