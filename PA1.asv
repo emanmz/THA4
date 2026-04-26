@@ -207,10 +207,10 @@ if norm(b) < 0.001
     break
 end
 
-% ====== Constraints ======
+% Constraints
 
 % joint limits
-qMin = qL- q; %is this the right way to define this?
+qMin = qL- q; %is this the right way to define this
 qMax = qU - q;
 
 % 3mm distance 
@@ -223,12 +223,8 @@ qMax = qU - q;
 A_ineq = (b' * A) / norm(b); 
 b_ineq = 3 - norm(b);
 
+
 % solve with MATLAB built in 
 dq = lsqlin(A, b, A_ineq, b_ineq, [], [], qMin, qMax);
-
-% update q
-q = q + dq; 
-
-
 
 
