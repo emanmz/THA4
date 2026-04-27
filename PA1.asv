@@ -1,8 +1,13 @@
 clear; close all; clc;
 addpath("Functions")
 
+
+%% THINGS TO FIX
+% 1. animation doesnt follow line and dot when using the algorithm
+% 2. redundancy resolution to avoid joint limits. our redundancy works by
+% maximixing ellipsoid. maybe it could work somehow? 
 %% Robot Setup
-robot = loadrobot('frankaEmikaPanda','DataFormat','column');
+robot = loadrobot('frankaEmika','DataFormat','column');
 robot.Gravity = [0 0 -9.81];
 
 % Remove the hand and fingers
@@ -30,7 +35,8 @@ q = homeConfiguration(robot);
 q(1:7) = [0; -pi/4; 0; -3*pi/4; 0; pi/2; pi/4];
 
 %% Goal & Tool Geometry
-pGoal = [0.10; 0.10; 0.40];
+% pGoal = [0.10; 0.10; 0.40];
+pGoal = [0.30;0.00;0.50];
 dMax  = 0.003; % here is the 3 mm circle 
 % tip is at the end of the 100mm cylinder
 toolTipOffset = [0; 0; toolL];
@@ -52,8 +58,10 @@ set(ax1,'Color',[0.08 0.08 0.12],'XColor','w','YColor','w','ZColor','w');
 
 % Goal Sphere
 [sx,sy,sz] = sphere(24);
-surf(ax1, sx*dMax+pGoal(1), sy*dMax+pGoal(2), sz*dMax+pGoal(3), ...
-    'FaceColor','g','EdgeColor','none','FaceAlpha',0.4);
+% surf(ax1, sx*dMax+pGoal(1), sy*dMax+pGoal(2), sz*dMax+pGoal(3), ...
+%     'FaceColor','g','EdgeColor','none','FaceAlpha',0.4);
+surf(ax1, sx*0.05 + pGoal(1), sy*0.05 + pGoal(2), sz*0.05 + pGoal(3), ...
+    'FaceColor','g','EdgeColor','none','FaceAlpha',0.4); %made this 5cm for debugging bc i couldnt see shit 
 
 traj = plot3(ax1,NaN,NaN,NaN,'c-','LineWidth',2);
 tipP = plot3(ax1,NaN,NaN,NaN,'ro','MarkerFaceColor','r');
@@ -71,51 +79,51 @@ xlim(ax2,[0 T]); ylim(ax2,[0 0.6]);
 pHist = zeros(3,N);
 eHist = zeros(1,N);
 
-%% MAIN LOOP
-for k = 1:N
-    % get Tool Tip Position
-    Ttool = getTransform(robot, q, toolName);
-    % transform the local tip offset [0,0,0.1] into world coordinates
-    p = Ttool(1:3,1:3) * toolTipOffset + Ttool(1:3,4);
+% %% MAIN LOOP- Animation Test
+% for k = 1:N
+%     % get Tool Tip Position
+%     Ttool = getTransform(robot, q, toolName);
+%     % transform the local tip offset [0,0,0.1] into world coordinates
+%     p = Ttool(1:3,1:3) * toolTipOffset + Ttool(1:3,4);
+% 
+%     err = pGoal - p;
+%     dist = norm(err);
+% 
+%     % jacobian (7 joints)
+%     J = geometricJacobian(robot, q, toolName);
+%     Jv = J(4:6, :); % Linear velocity part for 7 joints
+% 
+%     % controller
+%     if dist > dMax
+%         v = gain * err;
+%     else
+%         v = zeros(3,1);
+%     end
+% 
+%     % Simple IK (Pseudo-inverse) rn
+%     dq = pinv(Jv) * v;
+%     q = q + dq * dt;
+% 
+%     % store & Update
+%     pHist(:,k) = p;
+%     eHist(k) = dist;
+%     l1 = light(ax1, 'Position',[2  2  3], 'Style','infinite', 'Color',[1 0.97 0.92]);
+%     l2 = light(ax1, 'Position',[-2 -1  2], 'Style','infinite', 'Color',[0.3 0.4 0.6]);
+%     l3 = light(ax1, 'Position',[0   3 -1], 'Style','infinite', 'Color',[0.15 0.15 0.2]);
+%     lighting(ax1, 'gouraud');   % smooth shading across faces
+%     material(ax1, 'metal');     % higher specular highlight → shiny robot links
+%     show(robot, q, 'Parent', ax1, 'Visuals', 'on', 'Frames', 'off', 'PreservePlot', false);
+% 
+%     set(traj, 'XData', pHist(1,1:k), 'YData', pHist(2,1:k), 'ZData', pHist(3,1:k));
+%     set(tipP, 'XData', p(1), 'YData', p(2), 'ZData', p(3));
+%     set(errLine, 'XData', (0:k-1)*dt, 'YData', eHist(1:k));
+% 
+%     drawnow limitrate;
+% end
 
-    err = pGoal - p;
-    dist = norm(err);
 
-    % jacobian (7 joints)
-    J = geometricJacobian(robot, q, toolName);
-    Jv = J(4:6, :); % Linear velocity part for 7 joints
-
-    % controller
-    if dist > dMax
-        v = gain * err;
-    else
-        v = zeros(3,1);
-    end
-
-    % Simple IK (Pseudo-inverse) rn
-    dq = pinv(Jv) * v;
-    q = q + dq * dt;
-
-    % store & Update
-    pHist(:,k) = p;
-    eHist(k) = dist;
-    l1 = light(ax1, 'Position',[2  2  3], 'Style','infinite', 'Color',[1 0.97 0.92]);
-    l2 = light(ax1, 'Position',[-2 -1  2], 'Style','infinite', 'Color',[0.3 0.4 0.6]);
-    l3 = light(ax1, 'Position',[0   3 -1], 'Style','infinite', 'Color',[0.15 0.15 0.2]);
-    lighting(ax1, 'gouraud');   % smooth shading across faces
-    material(ax1, 'metal');     % higher specular highlight → shiny robot links
-    show(robot, q, 'Parent', ax1, 'Visuals', 'on', 'Frames', 'off', 'PreservePlot', false);
-
-    set(traj, 'XData', pHist(1,1:k), 'YData', pHist(2,1:k), 'ZData', pHist(3,1:k));
-    set(tipP, 'XData', p(1), 'YData', p(2), 'ZData', p(3));
-    set(errLine, 'XData', (0:k-1)*dt, 'YData', eHist(1:k));
-
-    drawnow limitrate;
-end
-
-%% Algorithm from Slides. idk how this fits in with the above stuff honestly...
-
-%% Franka Emika - lifted this section from THA2 but added joint limits qL and qU
+%% Franka Emika Set Up from THA2
+% lifted this section from THA2 
 
 % link lengths, m
 L = [0.333 0.316 0.384 0.107];
@@ -169,19 +177,23 @@ for i=1:7
     S_body(:, i) = [wi; vi];
 end
 
-% joint limits
-qL_deg = [-166, -101, -166, -176, -166, -1, -166];
-qU_deg = [166, 101, 166, -4, 166, 215, 166]; 
-qL = deg2rad(qL_deg);
-qU = deg2rad(qU_deg);
 
-%% Okay start algorithm part based on W14-L1 Slides 10-12
 
+%% PA1 Algorithm- W14-L1 Slides 10-12
+
+% VARIABLES - check these later
 % q: current joint angles [1x7] 
 % qL: lower joint limits
 % qU: upper joint limits
 % p_tip: tool tip in {b} [3x1]
-% p_goal: goal position in {s} [3x1]
+% pGoal: goal position in {s} [3x1]
+
+
+% joint limits
+qL_deg = [-166; -101; -166; -176; -166; -1; -166];
+qU_deg = [166; 101; 166; -4; 166; 215; 166]; 
+qL = deg2rad(qL_deg);
+qU = deg2rad(qU_deg);
 
 p_tip = [0;0;toolL]; %GEM
 q_initial = [0; -pi/4; 0; -3*pi/4; 0; pi/2; pi/4]; %this is the home config you have above
@@ -197,11 +209,11 @@ J_eps = Js(4:6,:);
 
 % tip position in space frame
 t_h = F*[p_tip; 1]; % 4x4*4x1 calculation from {b} to {s}
-t_current = t_h(1:3); % 3x1 tip poition
+p_current = t_h(1:3); % 3x1 tip poition
 
 % Form Ax-b problem (W14-L1-SL12)
-A = skewSym(-t_current)*J_alpha+J_eps;
-b = t_current-p_goal;
+A = skewSym(-p_current)*J_alpha+J_eps;
+b = p_current-pGoal;
 
 % check positional error
 if norm(b) < 0.001
@@ -223,18 +235,32 @@ qMax = qU - q;
 % linearized version of ||(skewSym(-t)*J_alpha+J_eps)*deltaq +t-p_goal||
 % <= 3 
 A_ineq = (b' * A) / norm(b); 
-b_ineq = 3 - norm(b);
+b_ineq = 0.003 + norm(b);
 
 % solve with MATLAB built in 
-dq = lsqlin(A, b, A_ineq, b_ineq, [], [], qMin, qMax);
+dq = lsqlin(A, -b, A_ineq, b_ineq, [], [], qMin, qMax);
 
 % fail safe 
 if isempty(dq)
     disp('Solver Failed');
     break
+end 
 
 % update q
 q = q + dq*dt; 
+
+% update animation
+pHist(:,k) = p_current;
+    eHist(k) = norm(b);
+    
+    % Update Visuals
+    show(robot, q, 'Parent', ax1, 'Visuals', 'on', 'Frames', 'off', 'PreservePlot', false);
+    set(traj, 'XData', pHist(1,1:k), 'YData', pHist(2,1:k), 'ZData', pHist(3,1:k));
+    set(tipP, 'XData', p_current(1), 'YData', p_current(2), 'ZData', p_current(3));
+    set(errLine, 'XData', (0:k-1)*dt, 'YData', eHist(1:k));
+    
+    drawnow limitrate;
+end 
 
 
 
