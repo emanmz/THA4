@@ -169,9 +169,11 @@ for i=1:7
     S_body(:, i) = [wi; vi];
 end
 
-% joint limits (deg)
-qL_deg = [-166, -101, -166, -176, -166, -1, -166];
-qU_deg = [166, 101, 166, -4, 166, 215, 166]; %change to radians
+% joint limits
+qL_deg = [-166; -101; -166; -176; -166; -1; -166];
+qU_deg = [166; 101; 166; -4; 166; 215; 166]; 
+qL = deg2rad(qL_deg);
+qU = deg2rad(qU_deg);
 
 %% Okay start algorithm part based on W14-L1 Slides 10-12
 
@@ -181,12 +183,12 @@ qU_deg = [166, 101, 166, -4, 166, 215, 166]; %change to radians
 % p_tip: tool tip in {b} [3x1]
 % p_goal: goal position in {s} [3x1]
 
+p_tip = [0;0;toolL]; %GEM
 q_initial = [0; -pi/4; 0; -3*pi/4; 0; pi/2; pi/4]; %this is the home config you have above
 q = q_initial;
-dt = 0.01; % time step, idk if this is good or not
-max_steps = 1000; %same here. I also don't know if we are suppose to do it in one step?
 
-for k =1:max_steps
+for k =1:N
+
 % FK and Jacobians of current joint angle
 F = FK_space_no_plot(M, S_space, q); % T from {b} to {s}
 Js = J_space(S_space, q); 
@@ -194,14 +196,14 @@ J_alpha = Js(1:3, :);
 J_eps = Js(4:6,:);
 
 % tip position in space frame
-t_h = F*[p_tip; 1]; % 4x4*4x1 calculation from {b} to S{}
-t = t_h(1:3); % 3x1 tip poition
+t_h = F*[p_tip; 1]; % 4x4*4x1 calculation from {b} to {s}
+p_current = t_h(1:3); % 3x1 tip poition
 
 % Form Ax-b problem (W14-L1-SL12)
-A = skewSym(-t)*J_alpha+J_eps;
-b = t-p_goal;
+A = skewSym(-p_current)*J_alpha+J_eps;
+b = p_current-pGoal;
 
-% check positional error. dont think we need orientation error for this?
+% check positional error
 if norm(b) < 0.001
     disp('Goal Reached');
     break
@@ -226,9 +228,33 @@ b_ineq = 3 - norm(b);
 % solve with MATLAB built in 
 dq = lsqlin(A, b, A_ineq, b_ineq, [], [], qMin, qMax);
 
-% update q
-q = q + dq; 
+% fail safe 
+if isempty(dq)
+    disp('Solver Failed');
+    break
+end 
 
+% update q
+q = q + dq*dt; 
+
+% update animation
+pHist(:,k) = p_current;
+    eHist(k) = norm(b);
+    
+    % Update Visuals (using your existing robot object)
+    % show(robot, q, 'Parent', ax1, 'Visuals', 'on', 'Frames', 'off', 'PreservePlot', false);
+   if ishandle(ax1) % Verify axis still exists
+        show(robot, q, 'Parent', ax1, 'Visuals', 'on', 'Frames', 'off', 'PreservePlot', false);
+    else
+        error('Axis handle ax1 is no longer valid. Check if figure was closed.');
+    end
+    
+    set(traj, 'XData', pHist(1,1:k), 'YData', pHist(2,1:k), 'ZData', pHist(3,1:k));
+    set(tipP, 'XData', p_current(1), 'YData', p_current(2), 'ZData', p_current(3));
+    set(errLine, 'XData', (0:k-1)*dt, 'YData', eHist(1:k));
+    
+    drawnow limitrate;
+end 
 
 
 
