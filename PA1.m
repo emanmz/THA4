@@ -1,7 +1,7 @@
 clear; close all; clc;
 
 %% Robot Setup
-robot = loadrobot('frankaEmikaPanda','DataFormat','column');
+robot = loadrobot('frankaEmika','DataFormat','column');
 robot.Gravity = [0 0 -9.81];
 
 % Remove the hand and fingers
