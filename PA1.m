@@ -1,11 +1,15 @@
 clear; close all; clc;
 addpath("Functions")
 
-
 %% THINGS TO FIX
 % 1. animation doesnt follow line and dot when using the algorithm
 % 2. redundancy resolution to avoid joint limits. our redundancy works by
 % maximixing ellipsoid. maybe it could work somehow? 
+% 3. need several pGoal cases 
+% 4. add the plotting sections that I added to PA2. 
+% 5. fix the bar graph. don't like how the bar start at the bottom but the
+% shadows are centered around zero. also the labels aren't actually beloq
+% the columns?
 %% Robot Setup
 robot = loadrobot('frankaEmika','DataFormat','column');
 robot.Gravity = [0 0 -9.81];
