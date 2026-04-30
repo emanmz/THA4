@@ -120,7 +120,7 @@ errLine = plot(ax2,nan,nan,'c-','LineWidth',2);
 xlim(ax2,[0 T]);
 ylim(ax2,[0 0.6]);
 
-%% Joint Plot
+%% Joint Plot  (FIXED)
 ax3 = subplot(2,2,4);
 hold(ax3,'on'); grid(ax3,'on');
 
@@ -128,11 +128,40 @@ set(ax3,'Color',[0.08 0.08 0.12], ...
         'XColor','w','YColor','w');
 
 title(ax3,'Joint Angles (deg)','Color','w');
+xlabel(ax3,'Joint #','Color','w');
+ylabel(ax3,'Angle (deg)','Color','w');
 
-hBar = bar(ax3,rad2deg(q),'FaceColor',[0 0.7 0.7]);
+qL_deg = rad2deg(qL);
+qU_deg = rad2deg(qU);
+q_deg  = rad2deg(q);
 
-ylim(ax3,[-190 190]);
+ylim(ax3,[-190 220]);
+xlim(ax3,[0.5 7.5]);
 xticks(ax3,1:7);
+
+%% Draw allowable joint ranges as gray bars
+for i = 1:7
+    rectangle(ax3, ...
+        'Position',[i-0.35, qL_deg(i), 0.70, qU_deg(i)-qL_deg(i)], ...
+        'FaceColor',[0.25 0.25 0.25], ...
+        'EdgeColor',[0.45 0.45 0.45], ...
+        'LineWidth',1.0);
+end
+
+%% Current joint angle bars
+hBar = bar(ax3,1:7,q_deg,0.45, ...
+    'FaceColor',[0 0.8 0.8], ...
+    'EdgeColor','none');
+
+%% Limit lines
+for i = 1:7
+    plot(ax3,[i-0.35 i+0.35],[qL_deg(i) qL_deg(i)],'r-','LineWidth',1.2);
+    plot(ax3,[i-0.35 i+0.35],[qU_deg(i) qU_deg(i)],'r-','LineWidth',1.2);
+end
+
+legend(ax3,{'Allowed Range','Current Angle','Limits'}, ...
+       'TextColor','w','Color',[0.1 0.1 0.1], ...
+       'Location','northwest');
 
 %% FIGURE 2: Surgical Microscope (The Zoomed View)
 fig2 = figure(2);
