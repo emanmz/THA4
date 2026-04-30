@@ -13,7 +13,7 @@ Js(:,1) = Sn(:,1);
 T = eye(4);
 for i = 2:n
     T = T * screw_to_exp(Sn(:, i-1), theta(i-1));
-    Js(:, i) = Adjoint(T) * Sn(:, i);
+    Js(:, i) = adjoint(T) * Sn(:, i);
 end
 end
 
