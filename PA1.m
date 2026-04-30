@@ -1,6 +1,6 @@
 clear; close all; clc;
 addpath("Functions")
-
+%hello
 %% Objectives
 % 1) Respect joint limits
 % 2) Move CYLINDER TIP to pGoal
